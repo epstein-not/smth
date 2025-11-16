@@ -501,7 +501,7 @@ export const Desktop = ({ onLogout, onReboot, onCriticalKill, onOpenAdminPanel, 
     } else if (installType === 'standard') {
       return app.minimalInclude === true || app.standardInclude === true || app.id === 'app-store';
     } else {
-      return isSystemApp; // full installation includes all base apps
+      return true; // full installation includes ALL base apps
     }
   });
 
