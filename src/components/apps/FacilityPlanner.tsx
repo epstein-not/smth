@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Grid3x3, Trash2, Settings as SettingsIcon, ZoomIn, ZoomOut, Eye, Layers, Save, Copy, RotateCcw } from "lucide-react";
+import { Grid3x3, Trash2, Settings as SettingsIcon, ZoomIn, ZoomOut, Eye, Layers, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { saveState, loadState } from "@/lib/persistence";
 import { RoomProperties } from "./RoomProperties";
+import { HallwayTool } from "./HallwayTool";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -45,7 +46,8 @@ export const FacilityPlanner = () => {
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
   const [roomEditorGrid, setRoomEditorGrid] = useState<boolean[][]>([]);
   const [hallwaySegments, setHallwaySegments] = useState<HallwaySegment[]>(() => loadState('facility_planner_hallways', []));
-  const [currentHallwayPoints, setCurrentHallwayPoints] = useState<{ x: number; y: number }[]>([]);
+  const [hallwayStartRoom, setHallwayStartRoom] = useState<string | null>(null);
+  const [currentHallwayPath, setCurrentHallwayPath] = useState<{ x: number; y: number }[]>([]);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
@@ -56,10 +58,13 @@ export const FacilityPlanner = () => {
   const [placingRoomType, setPlacingRoomType] = useState<string | null>(null);
   const [roomTemplate, setRoomTemplate] = useState<keyof typeof ROOM_TEMPLATES>("medium");
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [selectedHallwayId, setSelectedHallwayId] = useState<string | null>(null);
   const [draggingRoom, setDraggingRoom] = useState<string | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, roomX: 0, roomY: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const [hallwayWidth, setHallwayWidth] = useState(40);
+  const [hallwayCounter, setHallwayCounter] = useState(1);
+  const [hallwayEditMode, setHallwayEditMode] = useState(false);
 
   useEffect(() => {
     saveState('facility_planner_rooms', rooms);
@@ -115,9 +120,41 @@ export const FacilityPlanner = () => {
     const { x, y } = getCanvasCoordinates(e);
 
     if (mode === "hallway") {
-      const snappedX = snapValue(x);
-      const snappedY = snapValue(y);
-      setCurrentHallwayPoints(prev => [...prev, { x: snappedX, y: snappedY }]);
+      const clickedRoom = rooms.find(room => 
+        x >= room.x && x <= room.x + room.width &&
+        y >= room.y && y <= room.y + room.height
+      );
+
+      if (!hallwayStartRoom) {
+        if (clickedRoom) {
+          setHallwayStartRoom(clickedRoom.id);
+          const centerX = clickedRoom.x + clickedRoom.width / 2;
+          const centerY = clickedRoom.y + clickedRoom.height / 2;
+          setCurrentHallwayPath([{ x: snapValue(centerX), y: snapValue(centerY) }]);
+          toast.info("Click on another room or empty space to continue");
+        }
+      } else {
+        const snappedX = snapValue(x);
+        const snappedY = snapValue(y);
+        const lastPoint = currentHallwayPath[currentHallwayPath.length - 1];
+        
+        const isHorizontal = Math.abs(snappedY - lastPoint.y) < 10;
+        const isVertical = Math.abs(snappedX - lastPoint.x) < 10;
+        
+        if (isHorizontal || isVertical) {
+          const newPoint = isHorizontal 
+            ? { x: snappedX, y: lastPoint.y }
+            : { x: lastPoint.x, y: snappedY };
+          
+          setCurrentHallwayPath(prev => [...prev, newPoint]);
+          
+          if (clickedRoom && clickedRoom.id !== hallwayStartRoom) {
+            completeHallway(clickedRoom.id);
+          }
+        } else {
+          toast.error("Hallways must be straight (horizontal or vertical)");
+        }
+      }
     } else if (mode === "room-editor") {
       return;
     } else if (placingRoomType) {
@@ -183,48 +220,29 @@ export const FacilityPlanner = () => {
     toast.success("Room deleted");
   };
 
-  const duplicateRoom = () => {
-    if (!selectedRoomId) return;
-    const room = rooms.find(r => r.id === selectedRoomId);
-    if (!room) return;
-    const newRoom = {
-      ...room,
-      id: Date.now().toString(),
-      name: `${room.name} (Copy)`,
-      x: room.x + 30,
-      y: room.y + 30,
-    };
-    setRooms([...rooms, newRoom]);
-    toast.success("Room duplicated");
-  };
-
-  const clearAll = () => {
-    if (confirm("Clear all rooms and hallways?")) {
-      setRooms([]);
-      setHallwaySegments([]);
-      setSelectedRoomId(null);
-      toast.success("Cleared");
-    }
-  };
-
-  const finishHallway = () => {
-    if (currentHallwayPoints.length < 2) {
-      toast.error("Need at least 2 points");
+  const completeHallway = (endRoomId: string) => {
+    if (currentHallwayPath.length < 2) {
+      toast.error("Hallway needs at least 2 points");
       return;
     }
+
     const newHallway: HallwaySegment = {
       id: Date.now().toString(),
-      points: currentHallwayPoints,
+      points: currentHallwayPath,
       width: hallwayWidth,
     };
+
     setHallwaySegments([...hallwaySegments, newHallway]);
-    setCurrentHallwayPoints([]);
+    setCurrentHallwayPath([]);
+    setHallwayStartRoom(null);
     setMode("facility");
-    toast.success("Hallway created");
+    setHallwayCounter(prev => prev + 1);
+    toast.success(`Hallway ${hallwayCounter} created`);
   };
 
   const cancelHallway = () => {
-    setCurrentHallwayPoints([]);
+    setCurrentHallwayPath([]);
+    setHallwayStartRoom(null);
     setMode("facility");
   };
 
@@ -313,13 +331,31 @@ export const FacilityPlanner = () => {
           </Button>
           <Button
             size="sm"
+            variant={hallwayEditMode ? "default" : "outline"}
+            onClick={() => {
+              setHallwayEditMode(!hallwayEditMode);
+              if (!hallwayEditMode) {
+                setSelectedRoomId(null);
+                setMode("facility");
+                toast.info("Click hallways to select, right-click to delete, click endpoints to create new hallways");
+              } else {
+                setSelectedHallwayId(null);
+              }
+            }}
+          >
+            <Edit className="w-4 h-4 mr-1" />
+            {hallwayEditMode ? "Exit Hallway Edit" : "Edit Hallways"}
+          </Button>
+          <Button
+            size="sm"
             variant={mode === "hallway" ? "default" : "outline"}
             onClick={() => {
               if (mode === "hallway") {
                 cancelHallway();
               } else {
                 setMode("hallway");
-                toast.info("Click to place hallway points");
+                setHallwayEditMode(false);
+                toast.info("Click to draw hallway points");
               }
             }}
           >
@@ -329,10 +365,28 @@ export const FacilityPlanner = () => {
         </div>
 
         {mode === "hallway" && (
-          <Button size="sm" variant="default" onClick={finishHallway}>
-            <Save className="w-4 h-4 mr-1.5" />
-            Finish
-          </Button>
+          <div className="flex-1 flex justify-center">
+            <HallwayTool
+              pointCount={currentHallwayPath.length}
+              onComplete={() => {
+                if (hallwayStartRoom && currentHallwayPath.length >= 2) {
+                  const newHallway: HallwaySegment = {
+                    id: Date.now().toString(),
+                    points: currentHallwayPath,
+                    width: hallwayWidth,
+                  };
+                  setHallwaySegments([...hallwaySegments, newHallway]);
+                  setCurrentHallwayPath([]);
+                  setHallwayStartRoom(null);
+                  setMode("facility");
+                  setHallwayCounter(prev => prev + 1);
+                  toast.success(`Hallway ${hallwayCounter} created`);
+                }
+              }}
+              onCancel={cancelHallway}
+              startRoomName={rooms.find(r => r.id === hallwayStartRoom)?.name}
+            />
+          </div>
         )}
 
         {mode === "facility" && (
@@ -474,67 +528,160 @@ export const FacilityPlanner = () => {
               </div>
             </Card>
           )}
+          {mode !== "room-editor" && rooms.map(room => {
+            const renderCustomShape = () => {
+              if (!room.gridShape) return null;
+              const cellSize = 10;
+              return (
+                <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                  {room.gridShape.map((cell, idx) => (
+                    <rect
+                      key={idx}
+                      x={cell.col * cellSize}
+                      y={cell.row * cellSize}
+                      width={cellSize}
+                      height={cellSize}
+                      fill={getRoomBackgroundColor(room.type)}
+                      stroke="hsl(var(--border))"
+                      strokeWidth="0.5"
+                    />
+                  ))}
+                </svg>
+              );
+            };
 
-          {mode !== "room-editor" && rooms.map(room => (
-            <div
-              key={room.id}
-              className={`absolute border-2 cursor-move transition-all ${
-                selectedRoomId === room.id 
-                  ? 'border-primary ring-4 ring-primary/30 shadow-lg' 
-                  : 'border-border hover:border-primary/50'
-              }`}
-              style={{
-                left: room.x,
-                top: room.y,
-                width: room.width,
-                height: room.height,
-                backgroundColor: getRoomBackgroundColor(room.type),
-                borderRadius: '6px',
-              }}
-              onMouseDown={(e) => handleRoomMouseDown(e, room.id)}
-            >
-              <div className="p-2 h-full flex flex-col">
-                <div className="font-bold text-sm truncate">{room.name}</div>
-                <div className="text-xs opacity-70 truncate">{room.type}</div>
-                {room.gridShape && (
-                  <div className="mt-auto text-xs opacity-50 bg-black/20 px-1 rounded self-start">
-                    Custom
+            return (
+              <div key={room.id}>
+                <div
+                  className={`absolute border-2 cursor-move transition-all duration-200 animate-fade-in hover:scale-105 ${
+                    selectedRoomId === room.id ? 'border-primary ring-2 ring-primary/50 scale-105' : 'border-border'
+                  }`}
+                  style={{
+                    left: room.x,
+                    top: room.y,
+                    width: room.width,
+                    height: room.height,
+                    backgroundColor: room.gridShape ? 'transparent' : getRoomBackgroundColor(room.type),
+                  }}
+                  onClick={() => {
+                    if (!hallwayEditMode) {
+                      setSelectedRoomId(room.id);
+                      setSelectedHallwayId(null);
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    if (!hallwayEditMode) {
+                      handleRoomMouseDown(e, room.id);
+                    }
+                  }}
+                >
+                  {renderCustomShape()}
+                  <div className="p-2 relative z-10">
+                    <div className="font-bold text-sm">{room.name}</div>
+                    <div className="text-xs opacity-70">{room.type}</div>
+                    {room.gridShape && <div className="text-xs opacity-50">Custom Shape</div>}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {hallwaySegments.map(hallway => (
-            <svg key={hallway.id} className="absolute top-0 left-0 pointer-events-none" style={{ width: '3000px', height: '3000px' }}>
+            <svg key={hallway.id} className="absolute top-0 left-0" style={{ width: '2000px', height: '2000px', pointerEvents: 'none' }}>
               {hallway.points.map((point, i) => {
                 if (i === hallway.points.length - 1) return null;
                 const next = hallway.points[i + 1];
                 return (
-                  <line
-                    key={i}
-                    x1={point.x}
-                    y1={point.y}
-                    x2={next.x}
-                    y2={next.y}
-                    stroke="hsl(var(--muted-foreground))"
-                    strokeWidth={hallway.width}
-                    opacity="0.3"
-                    strokeLinecap="round"
-                  />
+                  <g key={i}>
+                    <line
+                      x1={point.x}
+                      y1={point.y}
+                      x2={next.x}
+                      y2={next.y}
+                      stroke={selectedHallwayId === hallway.id ? "#00ffff" : "hsl(var(--muted-foreground))"}
+                      strokeWidth={hallway.width}
+                      opacity={selectedHallwayId === hallway.id ? "1" : "0.3"}
+                      className="transition-all duration-200"
+                      style={{ 
+                        pointerEvents: hallwayEditMode ? 'stroke' : 'none',
+                        cursor: hallwayEditMode ? 'pointer' : 'default'
+                      }}
+                      onClick={(e) => {
+                        if (hallwayEditMode) {
+                          e.stopPropagation();
+                          setSelectedHallwayId(hallway.id);
+                          setSelectedRoomId(null);
+                        }
+                      }}
+                      onContextMenu={(e) => {
+                        if (hallwayEditMode) {
+                          e.preventDefault();
+                          if (window.confirm('Delete this hallway?')) {
+                            setHallwaySegments(prev => prev.filter(h => h.id !== hallway.id));
+                            setSelectedHallwayId(null);
+                            toast.success("Hallway deleted");
+                          }
+                        }
+                      }}
+                    />
+                    {hallwayEditMode && (
+                      <>
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r="8"
+                          fill={selectedHallwayId === hallway.id ? "#00ffff" : "#0078D7"}
+                          className="cursor-pointer hover:scale-125 transition-transform"
+                          style={{ pointerEvents: 'all' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newHallway = {
+                              id: `hallway-${Date.now()}`,
+                              points: [{ x: point.x, y: point.y }, { x: point.x + 100, y: point.y }],
+                              width: hallway.width
+                            };
+                            setHallwaySegments(prev => [...prev, newHallway]);
+                            setSelectedHallwayId(newHallway.id);
+                            toast.success("New hallway created from endpoint");
+                          }}
+                        />
+                        {i === hallway.points.length - 2 && (
+                          <circle
+                            cx={next.x}
+                            cy={next.y}
+                            r="8"
+                            fill={selectedHallwayId === hallway.id ? "#00ffff" : "#0078D7"}
+                            className="cursor-pointer hover:scale-125 transition-transform"
+                            style={{ pointerEvents: 'all' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newHallway = {
+                                id: `hallway-${Date.now()}`,
+                                points: [{ x: next.x, y: next.y }, { x: next.x + 100, y: next.y }],
+                                width: hallway.width
+                              };
+                              setHallwaySegments(prev => [...prev, newHallway]);
+                              setSelectedHallwayId(newHallway.id);
+                              toast.success("New hallway created from endpoint");
+                            }}
+                          />
+                        )}
+                      </>
+                    )}
+                  </g>
                 );
               })}
             </svg>
           ))}
 
-          {mode === "hallway" && currentHallwayPoints.length > 0 && (
-            <svg className="absolute top-0 left-0 pointer-events-none" style={{ width: '3000px', height: '3000px' }}>
-              {currentHallwayPoints.map((point, i) => (
-                <circle key={i} cx={point.x} cy={point.y} r="6" fill="hsl(var(--primary))" />
+          {mode === "hallway" && currentHallwayPath.length > 0 && (
+            <svg className="absolute top-0 left-0 pointer-events-none" style={{ width: '2000px', height: '2000px' }}>
+              {currentHallwayPath.map((point, i) => (
+                <circle key={i} cx={point.x} cy={point.y} r="6" fill="hsl(var(--primary))" className="animate-pulse" />
               ))}
-              {currentHallwayPoints.map((point, i) => {
-                if (i === currentHallwayPoints.length - 1) return null;
-                const next = currentHallwayPoints[i + 1];
+              {currentHallwayPath.map((point, i) => {
+                if (i === currentHallwayPath.length - 1) return null;
+                const next = currentHallwayPath[i + 1];
                 return (
                   <line
                     key={i}
@@ -545,7 +692,7 @@ export const FacilityPlanner = () => {
                     stroke="hsl(var(--primary))"
                     strokeWidth={hallwayWidth}
                     opacity="0.6"
-                    strokeLinecap="round"
+                    className="animate-fade-in"
                   />
                 );
               })}

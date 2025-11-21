@@ -57,9 +57,18 @@ interface WindowManagerProps {
   onCriticalKill: (processName: string, type?: "kernel" | "virus" | "bluescreen" | "memory" | "corruption" | "overload") => void;
   onOpenAdminPanel?: () => void;
   onLockdown?: (protocolName: string) => void;
+  onUpdate?: () => void;
 }
 
-export const WindowManager = ({ windows, onClose, onFocus, onMinimize, allWindows, onCloseWindow, onCriticalKill, onOpenAdminPanel, onLockdown }: WindowManagerProps) => {
+interface WindowData {
+  id: string;
+  app: App;
+  zIndex: number;
+}
+
+import { UrbanshadeInstaller } from "./apps/UrbanshadeInstaller";
+
+export const WindowManager = ({ windows, onClose, onFocus, allWindows, onCloseWindow, onCriticalKill, onOpenAdminPanel, onLockdown, onUpdate }: WindowManagerProps) => {
   const getAppContent = (appId: string) => {
     switch (appId) {
       case "app-store":
@@ -120,7 +129,7 @@ export const WindowManager = ({ windows, onClose, onFocus, onMinimize, allWindow
       case "crash-app":
         return <CrashApp onCrash={() => onCriticalKill("SYSTEM_CRASH", "kernel")} />;
       case "settings":
-        return <Settings />;
+        return <Settings onUpdate={onUpdate} />;
       case "registry":
         return <RegistryEditor />;
       case "disk-manager":
@@ -151,6 +160,11 @@ export const WindowManager = ({ windows, onClose, onFocus, onMinimize, allWindow
         return <GenericApp title="File Compressor" description="Archive and compress files" features={["Multiple format support", "Batch compression", "Encryption options", "Extract archives"]} />;
       case "pdf-reader":
         return <PdfReader />;
+      case "installer":
+        return <UrbanshadeInstaller onComplete={() => {
+          const windowId = windows.find(w => w.app.id === appId)?.id;
+          if (windowId) onCloseWindow(windowId);
+        }} />;
       case "spreadsheet":
         return <GenericApp title="Data Sheets" description="Spreadsheet calculations and data analysis" features={["Formulas and functions", "Charts and graphs", "Data sorting and filtering", "Import/export formats"]} />;
       case "presentation":

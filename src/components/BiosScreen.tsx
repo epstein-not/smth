@@ -5,7 +5,8 @@ interface BiosScreenProps {
 }
 
 export const BiosScreen = ({ onExit }: BiosScreenProps) => {
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [selectedTab, setSelectedTab] = useState<"main" | "boot" | "advanced" | "security" | "exit">("main");
+  const [selectedOption, setSelectedOption] = useState(0);
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
