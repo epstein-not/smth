@@ -18,6 +18,7 @@ import { ChangelogDialog } from "@/components/ChangelogDialog";
 import { UpdateScreen } from "@/components/UpdateScreen";
 import { AdminPanel } from "@/components/AdminPanel";
 import { LogoutScreen } from "@/components/LogoutScreen";
+import { DevModeConsole } from "@/components/DevModeConsole";
 
 const Index = () => {
   const [adminSetupComplete, setAdminSetupComplete] = useState(false);
@@ -59,6 +60,7 @@ const Index = () => {
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(() => {
     return localStorage.getItem("urbanshade_disclaimer_accepted") === "true";
   });
+  const [devModeOpen, setDevModeOpen] = useState(false);
 
   // Check if admin setup is complete and setup key listeners
   useEffect(() => {
@@ -150,6 +152,11 @@ const Index = () => {
       console.log("%c[SYSTEM] Returning to Normal Mode...", "color: #00ff00; font-weight: bold");
     };
 
+    (window as any).devMode = () => {
+      setDevModeOpen(true);
+      console.log("%c[SYSTEM] Opening Developer Console...", "color: #ff00ff; font-weight: bold");
+    };
+
     // Show available commands in console
     console.log(
       "%c[URBANSHADE OS] Console Commands Available",
@@ -166,6 +173,10 @@ const Index = () => {
     console.log(
       "%cnormalMode() - Return to normal mode",
       "color: #888888"
+    );
+    console.log(
+      "%cdevMode() - Open developer console",
+      "color: #ff00ff"
     );
     console.log(
       "%c\nHint: Check the HTML source for hidden secrets...",
@@ -336,9 +347,29 @@ const Index = () => {
   };
 
   if (!disclaimerAccepted) {
-    return <DisclaimerScreen onAccept={() => {
+    return <DisclaimerScreen onAccept={(skipInstall) => {
       localStorage.setItem("urbanshade_disclaimer_accepted", "true");
       setDisclaimerAccepted(true);
+      
+      if (skipInstall) {
+        // Create default admin and skip installation
+        const defaultAdmin = {
+          username: "Admin",
+          password: "admin",
+          id: "P000",
+          name: "Administrator (Admin)",
+          role: "System Administrator",
+          clearance: 5,
+          department: "Administration",
+          location: "Control Room",
+          status: "active",
+          phone: "x1000",
+          email: "admin@urbanshade.corp",
+          createdAt: new Date().toISOString()
+        };
+        localStorage.setItem("urbanshade_admin", JSON.stringify(defaultAdmin));
+        setAdminSetupComplete(true);
+      }
     }} />;
   }
 
@@ -454,6 +485,7 @@ const Index = () => {
           onCustomCrash={handleCustomCrash}
         />
       )}
+      {devModeOpen && <DevModeConsole onClose={() => setDevModeOpen(false)} />}
     </>
   );
 };
