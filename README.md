@@ -105,7 +105,7 @@ This is not paid in any way, shape, or form. You are free to use this as long as
 
 
 "Am i allowed to copy this?"
-Short answer: Yes — with respect.
+Short answer: Yes - with respect.
 Please follow these guidelines before using or redistributing any part of this project:
 
 ---
@@ -113,7 +113,7 @@ Please follow these guidelines before using or redistributing any part of this p
 • 	Attribution: Do not claim the project (or major parts of it) as your own. Include a visible attribution line in your fork or derivative work. Example:
 
 
-• 	"Based on Urbanshade by aswdBatch — https://github.com/aswdBatch/urbanshade-7e993958"
+• 	"Based on Urbanshade by aswdBatch - https://github.com/aswdBatch/urbanshade-7e993958"
 
 
 • 	Redistribution: Do not redistribute the project verbatim as your own project. If you redistribute, clearly state what you changed and keep a link back to the original repository.
@@ -137,7 +137,7 @@ Please follow these guidelines before using or redistributing any part of this p
 We value your feedback! To keep things organized, please open a single GitHub issue for each distinct bug or suggestion. Use the format below to make issues easy to triage and act on.
 Issue Template (Copy and Paste)
 ---
-Title: [Your Name] – [Feedback Title]
+Title: [Your Name] - [Feedback Title]
 
 Type: Bugs / Suggestions / Questions
 
@@ -196,7 +196,7 @@ Steps Before Reporting:
 
 Email Template
 ---
-Subject: [Your github handle] – Critical Compile Error
+Subject: [Your github handle] - Critical Compile Error
 
 
 Hello. I've encountered this error while compiling:
