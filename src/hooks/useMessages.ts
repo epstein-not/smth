@@ -33,8 +33,6 @@ export const useMessages = () => {
   const [blockedUntil, setBlockedUntil] = useState<Date | null>(null);
 
   const fetchMessages = useCallback(async () => {
-    if (!supabase) return;
-    
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -108,8 +106,6 @@ export const useMessages = () => {
   }, []);
 
   const fetchUsers = useCallback(async () => {
-    if (!supabase) return;
-    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -132,8 +128,6 @@ export const useMessages = () => {
     body: string,
     priority: 'normal' | 'high' | 'urgent' = 'normal'
   ) => {
-    if (!supabase) return { success: false, error: 'Not connected' };
-
     try {
       const { data, error } = await supabase.rpc('check_and_send_message', {
         p_recipient_id: recipientId,
@@ -174,8 +168,6 @@ export const useMessages = () => {
   }, []);
 
   const markAsRead = useCallback(async (messageId: string) => {
-    if (!supabase) return;
-
     try {
       const { error } = await supabase
         .from('messages')
@@ -193,8 +185,6 @@ export const useMessages = () => {
   }, []);
 
   const deleteMessage = useCallback(async (messageId: string) => {
-    if (!supabase) return;
-
     try {
       const { error } = await supabase
         .from('messages')
