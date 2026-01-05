@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, Check, Cloud, PartyPopper, Rocket, Zap, Shield, Monitor, Star, ArrowRight, Info, Paintbrush } from "lucide-react";
+import { Sparkles, Check, Cloud, PartyPopper, Rocket, Zap, Shield, Monitor, Star, ArrowRight, Info, Paintbrush, Bot } from "lucide-react";
 
 export const ChangelogDialog = () => {
   const [open, setOpen] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState("3.0");
-  const currentVersion = "3.0";
+  const [selectedVersion, setSelectedVersion] = useState("3.1");
+  const currentVersion = "3.1";
 
   useEffect(() => {
     const lastSeenVersion = localStorage.getItem("urbanshade_last_seen_version");
@@ -30,6 +30,48 @@ export const ChangelogDialog = () => {
   }
 
   const changelogs: Record<string, VersionData> = {
+    "3.1": {
+      icon: <Bot className="w-5 h-5" />,
+      color: "from-cyan-500 to-blue-600",
+      tagline: "NAVI Intelligence Update",
+      overview: "Major NAVI enhancements! Autonomous threat detection with graduated responses, auto-moderation, automated messaging, adaptive thresholds, streamlined moderation panel with sidebar navigation, and precision threshold controls.",
+      sections: {
+        "NAVI Autonomous System": [
+          "NEW: Graduated threat levels (Normal, Elevated, Warning, Critical, Emergency)",
+          "NEW: Auto-warn users at 5x threshold",
+          "NEW: Auto temp-ban top offenders at emergency level",
+          "NEW: Auto-lockdown at configurable multiplier (default 10x)",
+          "NEW: Velocity detection - catches accelerating attacks",
+          "NEW: Adaptive thresholds based on 24h rolling average"
+        ],
+        "NAVI Messaging": [
+          "NEW: Welcome messages for first-time users",
+          "NEW: Degraded service notices during emergencies",
+          "NEW: Warning messages to flagged users",
+          "All message types individually toggleable"
+        ],
+        "Push Notifications": [
+          "NEW: Critical alert notifications (lockdown events)",
+          "NEW: Warning notifications (threshold approaching)",
+          "NEW: Recovery notifications (threat normalized)",
+          "All notification types individually toggleable"
+        ],
+        "Moderation Panel Overhaul": [
+          "Redesigned with sidebar navigation for better UX",
+          "Removed redundant Security tab",
+          "Removed redundant NAVI Monitor tab",
+          "Renamed 'Autonomous' to 'NAVI Config'",
+          "Replaced imprecise sliders with number inputs",
+          "Added Export button to Personnel tab"
+        ],
+        "Database Additions": [
+          "navi_settings table for configuration storage",
+          "navi_auto_actions table for action logging",
+          "user_first_login table for welcome tracking",
+          "navi_threshold_history table for adaptive learning"
+        ]
+      }
+    },
     "3.0": {
       icon: <Rocket className="w-5 h-5" />,
       color: "from-rose-500 to-orange-600",

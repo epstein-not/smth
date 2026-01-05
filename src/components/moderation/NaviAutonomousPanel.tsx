@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useNaviAutonomous, requestNotificationPermission, sendPushNotification, ThreatLevel } from "@/hooks/useNaviAutonomous";
@@ -331,7 +331,7 @@ export const NaviAutonomousPanel = () => {
               onToggle={(v) => updateSettings({ adaptive_thresholds_enabled: v })}
             />
             
-            <ThresholdSlider
+            <ThresholdInput
               label="Signup Threshold"
               value={settings.signup_threshold}
               rollingAvg={settings.signup_rolling_avg}
@@ -339,7 +339,7 @@ export const NaviAutonomousPanel = () => {
               max={100}
               onChange={(v) => updateSettings({ signup_threshold: v })}
             />
-            <ThresholdSlider
+            <ThresholdInput
               label="Message Threshold"
               value={settings.message_threshold}
               rollingAvg={settings.message_rolling_avg}
@@ -347,7 +347,7 @@ export const NaviAutonomousPanel = () => {
               max={500}
               onChange={(v) => updateSettings({ message_threshold: v })}
             />
-            <ThresholdSlider
+            <ThresholdInput
               label="Failed Login Threshold"
               value={settings.failed_login_threshold}
               rollingAvg={settings.failed_login_rolling_avg}
@@ -355,7 +355,7 @@ export const NaviAutonomousPanel = () => {
               max={100}
               onChange={(v) => updateSettings({ failed_login_threshold: v })}
             />
-            <ThresholdSlider
+            <ThresholdInput
               label="Lockdown Multiplier"
               value={settings.lockdown_multiplier}
               min={5}
@@ -533,8 +533,8 @@ const MetricCard = ({
   );
 };
 
-// Threshold Slider Component
-const ThresholdSlider = ({
+// Threshold Input Component
+const ThresholdInput = ({
   label,
   value,
   rollingAvg,
@@ -554,20 +554,24 @@ const ThresholdSlider = ({
   <div className="space-y-1">
     <div className="flex items-center justify-between">
       <span className="text-sm">{label}</span>
-      <div className="flex items-center gap-2">
-        {rollingAvg !== undefined && (
-          <span className="text-[10px] text-cyan-400 font-mono">avg: {rollingAvg}</span>
-        )}
-        <span className="font-mono text-sm text-cyan-400">{value}{suffix}</span>
-      </div>
+      {rollingAvg !== undefined && (
+        <span className="text-[10px] text-cyan-400 font-mono">avg: {rollingAvg}</span>
+      )}
     </div>
-    <Slider
-      value={[value]}
-      min={min}
-      max={max}
-      step={1}
-      onValueChange={([v]) => onChange(v)}
-      className="py-1"
-    />
+    <div className="flex items-center gap-2">
+      <Input
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(e) => {
+          const v = Math.max(min, Math.min(max, Number(e.target.value) || min));
+          onChange(v);
+        }}
+        className="w-20 font-mono text-center h-8 bg-slate-900 border-slate-700"
+      />
+      {suffix && <span className="text-sm text-muted-foreground font-mono">{suffix}</span>}
+      <span className="text-xs text-slate-500 font-mono">{min}-{max}</span>
+    </div>
   </div>
 );

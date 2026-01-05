@@ -9,7 +9,6 @@ import {
   MessageSquare, Bell, Volume2, VolumeX, Cpu, HardDrive, Crown, Megaphone,
   UserCog, Send, Star, Sparkles, Bot, BarChart3
 } from "lucide-react";
-import { NaviMonitoringTab } from "@/components/moderation/NaviMonitoringTab";
 import { NaviAuthoritiesTab } from "@/components/moderation/NaviAuthoritiesTab";
 import { NaviAutonomousPanel } from "@/components/moderation/NaviAutonomousPanel";
 import { StatsTab } from "@/components/moderation/StatsTab";
@@ -19,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -463,6 +462,46 @@ const ActivityFeed = ({ activities }: { activities: ActivityLog[] }) => {
         </div>
       ))}
     </div>
+  );
+};
+
+// Sidebar Navigation Item
+const SidebarNavItem = ({ 
+  icon: Icon, 
+  label, 
+  count,
+  active, 
+  onClick, 
+  color = 'cyan' 
+}: { 
+  icon: any; 
+  label: string; 
+  count?: number;
+  active: boolean; 
+  onClick: () => void;
+  color?: 'cyan' | 'purple' | 'blue' | 'amber' | 'red';
+}) => {
+  const colorClasses = {
+    cyan: active ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/50' : 'hover:bg-cyan-500/10 hover:text-cyan-400',
+    purple: active ? 'bg-purple-500/20 text-purple-400 border-purple-500/50' : 'hover:bg-purple-500/10 hover:text-purple-400',
+    blue: active ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' : 'hover:bg-blue-500/10 hover:text-blue-400',
+    amber: active ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' : 'hover:bg-amber-500/10 hover:text-amber-400',
+    red: active ? 'bg-red-500/20 text-red-400 border-red-500/50' : 'hover:bg-red-500/10 hover:text-red-400',
+  };
+  
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all border border-transparent ${
+        active ? colorClasses[color] : `text-slate-400 ${colorClasses[color]}`
+      }`}
+    >
+      <Icon className="w-4 h-4" />
+      <span className="flex-1 text-left">{label}</span>
+      {count !== undefined && (
+        <span className={`text-xs font-mono ${active ? '' : 'text-slate-500'}`}>{count}</span>
+      )}
+    </button>
   );
 };
 
@@ -1227,39 +1266,64 @@ const ModerationPanel = () => {
       </div>
 
       <div className="max-w-[1800px] mx-auto px-6 py-6 flex gap-6">
-        {/* Main Content */}
-        <div className="flex-1">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="bg-slate-900/50 border border-slate-800 p-1 mb-6 flex-wrap">
-              <TabsTrigger value="users" className="gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
-                <Users className="w-4 h-4" /> Personnel ({users.length})
-              </TabsTrigger>
-              <TabsTrigger value="logs" onClick={() => fetchLogs()} className="gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
-                <FileText className="w-4 h-4" /> Logs
-              </TabsTrigger>
-              <TabsTrigger value="status" onClick={() => fetchStatuses()} className="gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
-                <Server className="w-4 h-4" /> Zone Control
-              </TabsTrigger>
-              <TabsTrigger value="security" className="gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
-                <ShieldCheck className="w-4 h-4" /> Security
-              </TabsTrigger>
-              <TabsTrigger value="navi" className="gap-2 data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
-                <Bot className="w-4 h-4" /> NAVI Monitor
-              </TabsTrigger>
-              <TabsTrigger value="authorities" className="gap-2 data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-400">
-                <Shield className="w-4 h-4" /> Authorities
-              </TabsTrigger>
-              <TabsTrigger value="stats" className="gap-2 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400">
-                <BarChart3 className="w-4 h-4" /> Stats
-              </TabsTrigger>
-              <TabsTrigger value="autonomous" className="gap-2 data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-400">
-                <Zap className="w-4 h-4" /> Autonomous
-              </TabsTrigger>
-            </TabsList>
+        {/* Sidebar Navigation */}
+        <div className="w-56 flex-shrink-0">
+          <div className="sticky top-6 p-2 rounded-xl bg-slate-900/50 border border-slate-800 space-y-1">
+            <div className="px-3 py-2 text-xs font-mono text-slate-500 uppercase tracking-wider">Navigation</div>
+            
+            <SidebarNavItem 
+              icon={Users} 
+              label="Personnel" 
+              count={users.length}
+              active={activeTab === 'users'} 
+              onClick={() => setActiveTab('users')} 
+              color="cyan"
+            />
+            <SidebarNavItem 
+              icon={FileText} 
+              label="Logs" 
+              active={activeTab === 'logs'} 
+              onClick={() => { setActiveTab('logs'); fetchLogs(); }} 
+              color="cyan"
+            />
+            <SidebarNavItem 
+              icon={Server} 
+              label="Zone Control" 
+              active={activeTab === 'status'} 
+              onClick={() => { setActiveTab('status'); fetchStatuses(); }} 
+              color="cyan"
+            />
+            <SidebarNavItem 
+              icon={Shield} 
+              label="Authorities" 
+              active={activeTab === 'authorities'} 
+              onClick={() => setActiveTab('authorities')} 
+              color="purple"
+            />
+            <SidebarNavItem 
+              icon={BarChart3} 
+              label="Stats" 
+              active={activeTab === 'stats'} 
+              onClick={() => setActiveTab('stats')} 
+              color="blue"
+            />
+            <SidebarNavItem 
+              icon={Bot} 
+              label="NAVI Config" 
+              active={activeTab === 'navi-config'} 
+              onClick={() => setActiveTab('navi-config')} 
+              color="amber"
+            />
+          </div>
+        </div>
 
-            <TabsContent value="users" className="m-0">
+        {/* Main Content */}
+        <div className="flex-1 min-w-0">
+          {/* Personnel Tab */}
+          {activeTab === 'users' && (
+            <div className="space-y-6">
               {/* Search and Filters */}
-              <div className="flex gap-4 mb-6">
+              <div className="flex gap-4">
                 <div className="relative flex-1 max-w-md">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <Input
@@ -1291,10 +1355,25 @@ const ModerationPanel = () => {
                     <SelectItem value="warned">With Warnings</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button
+                  onClick={() => {
+                    const data = JSON.stringify(users, null, 2);
+                    const blob = new Blob([data], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'personnel-export.json';
+                    a.click();
+                  }}
+                  variant="outline"
+                  className="border-slate-700 gap-2"
+                >
+                  <Download className="w-4 h-4" /> Export
+                </Button>
               </div>
 
               {/* Stats Row */}
-              <div className="grid grid-cols-5 gap-4 mb-6">
+              <div className="grid grid-cols-5 gap-4">
                 <div className="p-4 rounded-lg bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800">
                   <div className="flex items-center gap-3">
                     <Users className="w-5 h-5 text-cyan-400" />
@@ -1402,156 +1481,77 @@ const ModerationPanel = () => {
                   </div>
                 ))}
               </div>
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent value="logs" className="m-0">
-              <div className="space-y-2">
-                {logs.length === 0 ? (
-                  <div className="text-center py-16 text-slate-500">
-                    <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                    <p className="font-mono">No moderation logs recorded</p>
-                  </div>
-                ) : (
-                  logs.map(log => (
-                    <div key={log.id} className="p-4 rounded-lg bg-slate-900/50 border border-slate-800">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className={`px-3 py-1 rounded text-xs font-mono font-bold ${
-                            log.action_type === 'warn' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
-                            log.action_type.includes('ban') ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-                            'bg-slate-800 text-slate-400 border border-slate-700'
-                          }`}>
-                            {log.action_type.toUpperCase()}
-                            {log.is_fake && ' (PRANK)'}
-                          </span>
-                          <span className="text-sm font-mono">{log.reason}</span>
-                        </div>
-                        <span className="text-xs text-slate-500 font-mono">{new Date(log.created_at).toLocaleString()}</span>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="status" className="m-0">
-              <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/30 mb-6">
-                <h3 className="font-semibold text-cyan-400 mb-2 flex items-center gap-2 font-mono">
-                  <Server className="w-5 h-5" />
-                  ZONE CONTROL MATRIX
-                </h3>
-                <p className="text-sm text-slate-400 font-mono">
-                  Manage operational status of facility zones. Setting zones to maintenance or offline will broadcast alerts to all connected personnel.
-                </p>
-              </div>
-
-              {statusLoading ? (
-                <div className="text-center py-16">
-                  <RefreshCw className="w-8 h-8 animate-spin text-cyan-400 mx-auto mb-4" />
-                  <p className="text-slate-400 font-mono">Loading zone data...</p>
+          {/* Logs Tab */}
+          {activeTab === 'logs' && (
+            <div className="space-y-2">
+              {logs.length === 0 ? (
+                <div className="text-center py-16 text-slate-500">
+                  <FileText className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                  <p className="font-mono">No moderation logs recorded</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  {statuses.map(status => (
-                    <StatusCard 
-                      key={status.id}
-                      status={status}
-                      onUpdate={updateStatus}
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="security" className="m-0">
-              <div className="grid grid-cols-2 gap-6">
-                {/* NAVI Security Status */}
-                <div className="p-6 rounded-lg bg-gradient-to-br from-slate-900 to-slate-950 border-2 border-cyan-500/30">
-                  <h3 className="font-bold text-cyan-400 mb-4 flex items-center gap-2 font-mono">
-                    <Eye className="w-5 h-5" /> NAVI SECURITY SYSTEM
-                  </h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 rounded bg-slate-800/50">
-                      <span className="text-sm font-mono">Threat Detection</span>
-                      <span className="text-green-400 font-mono text-sm">ACTIVE</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded bg-slate-800/50">
-                      <span className="text-sm font-mono">Access Monitoring</span>
-                      <span className="text-green-400 font-mono text-sm">ACTIVE</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded bg-slate-800/50">
-                      <span className="text-sm font-mono">Lockout System</span>
-                      <span className="text-green-400 font-mono text-sm">ARMED</span>
-                    </div>
-                    <div className="flex items-center justify-between p-3 rounded bg-slate-800/50">
-                      <span className="text-sm font-mono">Site Lock</span>
-                      <span className={`font-mono text-sm ${lockdownActive ? 'text-red-400 animate-pulse' : 'text-slate-400'}`}>
-                        {lockdownActive ? 'ACTIVE' : 'STANDBY'}
+                logs.map(log => (
+                  <div key={log.id} className="p-4 rounded-lg bg-slate-900/50 border border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded text-xs font-mono font-bold ${
+                          log.action_type === 'warn' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                          log.action_type.includes('ban') ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                          'bg-slate-800 text-slate-400 border border-slate-700'
+                        }`}>
+                          {log.action_type.toUpperCase()}
+                        </span>
+                        <span className="text-slate-300">{log.reason || 'No reason provided'}</span>
+                      </div>
+                      <span className="text-xs text-slate-500 font-mono">
+                        {new Date(log.created_at).toLocaleString()}
                       </span>
                     </div>
                   </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* Zone Control Tab */}
+          {activeTab === 'status' && (
+            <div className="grid grid-cols-2 gap-6">
+              {statusLoading ? (
+                <div className="col-span-2 text-center py-16">
+                  <RefreshCw className="w-8 h-8 mx-auto mb-4 animate-spin text-cyan-400" />
+                  <p className="font-mono text-slate-500">Loading zone status...</p>
                 </div>
-
-                {/* Quick Actions */}
-                <div className="p-6 rounded-lg bg-gradient-to-br from-slate-900 to-slate-950 border-2 border-slate-800">
-                  <h3 className="font-bold text-slate-300 mb-4 flex items-center gap-2 font-mono">
-                    <Zap className="w-5 h-5" /> QUICK ACTIONS
-                  </h3>
-                  <div className="space-y-2">
-                    <Button 
-                      onClick={() => setShowLockdownDialog(true)}
-                      className="w-full justify-start gap-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30"
-                      disabled={lockdownActive}
-                    >
-                      <Lock className="w-4 h-4" /> Lock Site (Emergency)
-                    </Button>
-                    <Button 
-                      onClick={fetchUsers}
-                      className="w-full justify-start gap-2 bg-slate-800 hover:bg-slate-700"
-                    >
-                      <RefreshCw className="w-4 h-4" /> Refresh All Data
-                    </Button>
-                    <Button 
-                      onClick={() => setShowBroadcastDialog(true)}
-                      className="w-full justify-start gap-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 border border-cyan-500/30"
-                    >
-                      <Megaphone className="w-4 h-4" /> Global Notification
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        const data = JSON.stringify(users, null, 2);
-                        const blob = new Blob([data], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'personnel-export.json';
-                        a.click();
-                      }}
-                      className="w-full justify-start gap-2 bg-slate-800 hover:bg-slate-700"
-                    >
-                      <Download className="w-4 h-4" /> Export Personnel Data
-                    </Button>
-                  </div>
+              ) : statuses.length === 0 ? (
+                <div className="col-span-2 text-center py-16">
+                  <Server className="w-16 h-16 mx-auto mb-4 opacity-30 text-slate-500" />
+                  <p className="font-mono text-slate-500">No zones configured</p>
+                  <p className="text-xs text-slate-600 mt-2">Add site_status entries in database</p>
                 </div>
-              </div>
-            </TabsContent>
+              ) : (
+                statuses.map(status => (
+                  <StatusCard key={status.id} status={status} onUpdate={updateStatus} />
+                ))
+              )}
+            </div>
+          )}
 
-            <TabsContent value="navi" className="m-0">
-              <NaviMonitoringTab />
-            </TabsContent>
+          {/* Authorities Tab */}
+          {activeTab === 'authorities' && (
+            <NaviAuthoritiesTab isDemo={isDemoMode} />
+          )}
 
-            <TabsContent value="authorities" className="m-0">
-              <NaviAuthoritiesTab isDemo={isDemoMode} />
-            </TabsContent>
+          {/* Stats Tab */}
+          {activeTab === 'stats' && (
+            <StatsTab users={users} />
+          )}
 
-            <TabsContent value="stats" className="m-0">
-              <StatsTab users={users} />
-            </TabsContent>
-
-            <TabsContent value="autonomous" className="m-0">
-              <NaviAutonomousPanel />
-            </TabsContent>
-          </Tabs>
+          {/* NAVI Config Tab (formerly Autonomous) */}
+          {activeTab === 'navi-config' && (
+            <NaviAutonomousPanel />
+          )}
         </div>
 
         {/* Activity Feed Sidebar */}
