@@ -5,13 +5,14 @@ on:
     branches:
       - main
 
+# Allow the workflow to write to the repo so the deploy action can push gh-pages
 permissions:
-  contents: read
-  pages: read
+  contents: write
+  pages: write
   id-token: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -41,4 +42,4 @@ jobs:
         if: ${{ success() }}
         run: |
           echo "✅ GitHub Pages published (branch: gh-pages): https://aswdBatch.github.io/urbanshade-OS/"
-          echo "If the site doesn't appear, in repository Settings → Pages set the source to 'gh-pages' branch and folder '/'"
+          echo "If the site doesn't appear, go to Settings → Pages and set source to 'gh-pages' branch and folder '/'"
