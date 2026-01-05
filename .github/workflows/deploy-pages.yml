@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Build and Deploy to GitHub Pages
 
 on:
   push:
@@ -7,11 +7,11 @@ on:
 
 permissions:
   contents: read
-  pages: write
+  pages: read
   id-token: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,22 +24,21 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        # changed to npm install per your request
         run: npm install
 
       - name: Build
         run: npm run build
 
-      - name: Upload artifact for GitHub Pages
-        uses: actions/upload-pages-artifact@v1
+      - name: Deploy to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: ./dist
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v1
+          branch: gh-pages
+          folder: dist
+          clean: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Announcement
-        if: success()
+        if: ${{ success() }}
         run: |
-          echo "✅ GitHub Pages published: https://aswdBatch.github.io/urbanshade-OS/"
-          echo "Check Actions -> build-and-deploy for the deployment details."
+          echo "✅ GitHub Pages published (branch: gh-pages): https://aswdBatch.github.io/urbanshade-OS/"
+          echo "If the site doesn't appear, in repository Settings → Pages set the source to 'gh-pages' branch and folder '/'"
